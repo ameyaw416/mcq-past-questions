@@ -2,6 +2,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import morgan from 'morgan';
 import pool from './backend/src/config/db.js';
 import { createUsersTable} from './backend/src/data/createUsersTable.js';
 import { createExamTypeTable } from './backend/src/data/createExamTypeTable.js';
@@ -11,6 +13,8 @@ import { createQuestionsTable } from './backend/src/data/createQuestionsTable.js
 import { createAnswerOptionsTable } from './backend/src/data/createAnswerOptionsTable.js';
 import { createQuizAttemptTable } from './backend/src/data/createQuizAttemptTable.js';
 import { createQuizzesTable } from './backend/src/data/createQuizzesTable.js';
+import authRoutes from './backend/src/routes/authRoute.js';
+import verifyAuth from './backend/src/middlewares/authMiddleware.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -22,9 +26,14 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(cors());
+app.use(helmet());
+app.use(morgan('dev'));
+
+
 
 
 //routes
+app.use('/api/auth', verifyAuth, authRoutes);
 
 
 //Error handling middleware

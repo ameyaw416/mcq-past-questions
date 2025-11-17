@@ -8,6 +8,36 @@ const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const ACCESS_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+const parseDurationToMs = (value, fallbackMs) => {
+  if (!value) return fallbackMs;
+  if (/^\d+$/.test(value)) {
+    return Number(value);
+  }
+  const match = /^(\d+)(ms|s|m|h|d)$/.exec(value.trim());
+  if (!match) return fallbackMs;
+  const qty = Number(match[1]);
+  const unit = match[2];
+  switch (unit) {
+    case 'ms':
+      return qty;
+    case 's':
+      return qty * 1000;
+    case 'm':
+      return qty * 60 * 1000;
+    case 'h':
+      return qty * 60 * 60 * 1000;
+    case 'd':
+      return qty * 24 * 60 * 60 * 1000;
+    default:
+      return fallbackMs;
+  }
+};
+
+const accessCookieMaxAge = parseDurationToMs(ACCESS_EXPIRES_IN, 15 * 60 * 1000);
+const refreshCookieMaxAge = parseDurationToMs(REFRESH_EXPIRES_IN, 7 * 24 * 60 * 60 * 1000);
+
 const generateTokens = (user) => {
   const payload = { userId: user.id, email: user.email, role: user.role };
   const accessToken = jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
@@ -47,10 +77,24 @@ export const signupUser = async (req, res, next) => {
     const user = insertResult.rows[0];
     const tokens = generateTokens(user);
 
-    res.status(201).json({
+    res
+      .cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: accessCookieMaxAge,
+      })
+      .cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: refreshCookieMaxAge,
+        path: '/api/auth',
+      })
+      .status(201)
+      .json({
       message: 'User registered successfully.',
       user: sanitizeUser(user),
-      tokens,
     });
   } catch (error) {
     next(error);
@@ -83,10 +127,24 @@ export const loginUser = async (req, res) => {
     const tokens = generateTokens(user);
     const safeUser = sanitizeUser(user);
 
-    res.status(200).json({
+    res
+      .cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: accessCookieMaxAge,
+      })
+      .cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: refreshCookieMaxAge,
+        path: '/api/auth',
+      })
+      .status(200)
+      .json({
       message: 'Login successful.',
       user: safeUser,
-      tokens,
     });
   } catch (error) {
     console.error('loginUser error:', error);
@@ -94,7 +152,63 @@ export const loginUser = async (req, res) => {
   }
 };
 
+export const refreshTokens = async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Refresh token missing.' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, REFRESH_SECRET);
+    const result = await pool.query(
+      'SELECT id, full_name, email, role, created_at FROM Users WHERE id = $1',
+      [decoded.userId],
+    );
+
+    if (!result.rowCount) {
+      return res.status(401).json({ message: 'User no longer exists.' });
+    }
+
+    const user = result.rows[0];
+    const tokens = generateTokens(user);
+    const safeUser = sanitizeUser(user);
+
+    res
+      .cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: accessCookieMaxAge,
+      })
+      .cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: refreshCookieMaxAge,
+        path: '/api/auth',
+      })
+      .status(200)
+      .json({
+        message: 'Tokens refreshed.',
+        user: safeUser,
+      });
+  } catch (error) {
+    console.error('refreshTokens error:', error);
+    if (error && error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Refresh token expired.' });
+    }
+    if (error && error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid refresh token.' });
+    }
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 export const logoutUser = (req, res) => {
-  res.clearCookie('jid', { path: '/api/auth/refresh' });
-  res.status(200).json({ message: 'Logout successful.' });
+  res
+    .clearCookie('accessToken')
+    .clearCookie('refreshToken', { path: '/api/auth' })
+    .status(200)
+    .json({ message: 'Logout successful.' });
 };

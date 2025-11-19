@@ -6,21 +6,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import pool from './backend/src/config/db.js';
 import bcrypt from 'bcrypt';
-import { createUsersTable} from './backend/src/data/createUsersTable.js';
-import { createExamTypeTable } from './backend/src/data/createExamTypeTable.js';
-import { createSubjectTable } from './backend/src/data/createSubjectTable.js';
-import { createPaperTable } from './backend/src/data/createPaperTable.js';
-import { createQuestionsTable } from './backend/src/data/createQuestionsTable.js';
-import { createAnswerOptionsTable } from './backend/src/data/createAnswerOptionsTable.js';
-import { createQuizAttemptTable } from './backend/src/data/createQuizAttemptTable.js';
-import { createQuizzesTable } from './backend/src/data/createQuizzesTable.js';
-import { createTopicsTable } from './backend/src/data/createTopicsTable.js';
-import { createQuestionTopicsTable } from './backend/src/data/createQuestionTopicsTable.js';
-import { createAttemptAnswersTable } from './backend/src/data/createAttemptAnswersTable.js';
-import { createImportsTable } from './backend/src/data/createImportsTable.js';
-import { createImportErrorsTable } from './backend/src/data/createImportErrorsTable.js';
+import { runMigrations } from './backend/src/migrations/runMigrations.js';
 import authRoutes from './backend/src/routes/authRoute.js';
-import verifyAuth from './backend/src/middlewares/authMiddleware.js';
 import cookieParser from 'cookie-parser';
 
 // Load environment variables from .env file
@@ -88,39 +75,18 @@ app.use('/api/auth', authRoutes);
 // Initialize database and create tables
 // Initialize database and create tables
 async function init() {
-    
-try {
-  // Enable pgcrypto extension for UUID generation
-  await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
-
-  // Create tables
-    await createUsersTable();
-    await createExamTypeTable();
-    await createSubjectTable();
-    await createTopicsTable();
-    await createPaperTable();
-    await createQuestionsTable();
-    await createAnswerOptionsTable();
-    await createQuestionTopicsTable();
-    await createQuizAttemptTable();
-    await createAttemptAnswersTable();
-    await createQuizzesTable();
-    await createImportsTable();
-    await createImportErrorsTable();
+  try {
+    await runMigrations();
     await ensureInitialAdmin();
+    console.log('All tables initialized successfully.');
+  } catch (err) {
+    console.error('Error during database setup:', err);
+  }
 
-
-  console.log("All tables initialized successfully.");
-} catch (err) {
-  console.error("Error during database setup:", err);
-}
-
-
-
-//Server listening
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+  // Server listening
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
 }
 
 init();

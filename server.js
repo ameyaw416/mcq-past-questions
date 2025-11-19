@@ -14,6 +14,11 @@ import { createQuestionsTable } from './backend/src/data/createQuestionsTable.js
 import { createAnswerOptionsTable } from './backend/src/data/createAnswerOptionsTable.js';
 import { createQuizAttemptTable } from './backend/src/data/createQuizAttemptTable.js';
 import { createQuizzesTable } from './backend/src/data/createQuizzesTable.js';
+import { createTopicsTable } from './backend/src/data/createTopicsTable.js';
+import { createQuestionTopicsTable } from './backend/src/data/createQuestionTopicsTable.js';
+import { createAttemptAnswersTable } from './backend/src/data/createAttemptAnswersTable.js';
+import { createImportsTable } from './backend/src/data/createImportsTable.js';
+import { createImportErrorsTable } from './backend/src/data/createImportErrorsTable.js';
 import authRoutes from './backend/src/routes/authRoute.js';
 import verifyAuth from './backend/src/middlewares/authMiddleware.js';
 import cookieParser from 'cookie-parser';
@@ -92,11 +97,16 @@ try {
     await createUsersTable();
     await createExamTypeTable();
     await createSubjectTable();
+    await createTopicsTable();
     await createPaperTable();
     await createQuestionsTable();
     await createAnswerOptionsTable();
+    await createQuestionTopicsTable();
     await createQuizAttemptTable();
+    await createAttemptAnswersTable();
     await createQuizzesTable();
+    await createImportsTable();
+    await createImportErrorsTable();
     await ensureInitialAdmin();
 
 

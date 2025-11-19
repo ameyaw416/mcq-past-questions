@@ -8,6 +8,7 @@ import pool from './backend/src/config/db.js';
 import bcrypt from 'bcrypt';
 import { runMigrations } from './backend/src/migrations/runMigrations.js';
 import authRoutes from './backend/src/routes/authRoute.js';
+import errorHandler from './backend/src/middlewares/errorHandler.js';
 import cookieParser from 'cookie-parser';
 
 // Load environment variables from .env file
@@ -68,8 +69,8 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 
 
-//Error handling middleware
-
+// Error handling middleware
+app.use(errorHandler);
 
 
 // Initialize database and create tables

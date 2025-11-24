@@ -8,6 +8,8 @@ import pool from './backend/src/config/db.js';
 import bcrypt from 'bcrypt';
 import { runMigrations } from './backend/src/migrations/runMigrations.js';
 import authRoutes from './backend/src/routes/authRoute.js';
+import catalogRoutes from './backend/src/routes/catalogRoute.js';
+import questionRoutes from './backend/src/routes/questionRoute.js';
 import errorHandler from './backend/src/middlewares/errorHandler.js';
 import cookieParser from 'cookie-parser';
 
@@ -67,6 +69,8 @@ app.use(cookieParser());
 
 //routes
 app.use('/api/auth', authRoutes);
+app.use('/api/catalog', catalogRoutes);
+app.use('/api/questions', questionRoutes);
 
 
 // Error handling middleware

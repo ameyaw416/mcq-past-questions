@@ -12,6 +12,7 @@ export async function createQuizAttemptTable() {
     paper_id INT REFERENCES Paper_Table(id),
     started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,
+    expires_at TIMESTAMP,
     score INT,            -- correct answers count
     total_questions INT,
     percent NUMERIC(5,2)
@@ -20,7 +21,18 @@ export async function createQuizAttemptTable() {
     );
     `;
     try {
-        await pool.query(queryText);
+    await pool.query(queryText);
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'quiz_attempt_table' AND column_name = 'expires_at'
+        ) THEN
+          ALTER TABLE Quiz_Attempt_Table ADD COLUMN expires_at TIMESTAMP;
+        END IF;
+      END $$;
+    `);
         console.log("Quiz Attempt Table created or already exists.");
         }
     catch (err) {

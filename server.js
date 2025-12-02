@@ -11,6 +11,7 @@ import authRoutes from './backend/src/routes/authRoute.js';
 import catalogRoutes from './backend/src/routes/catalogRoute.js';
 import questionRoutes from './backend/src/routes/questionRoute.js';
 import importRoutes from './backend/src/routes/importRoute.js';
+import attemptRoutes from './backend/src/routes/attemptRoute.js';
 import errorHandler from './backend/src/middlewares/errorHandler.js';
 import cookieParser from 'cookie-parser';
 
@@ -73,6 +74,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/admin', importRoutes);
+app.use('/api/attempts', attemptRoutes);
 
 
 // Error handling middleware

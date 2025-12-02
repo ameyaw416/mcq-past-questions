@@ -12,6 +12,7 @@ import { createAttemptAnswersTable } from '../data/createAttemptAnswersTable.js'
 import { createQuizzesTable } from '../data/createQuizzesTable.js';
 import { createImportsTable } from '../data/createImportsTable.js';
 import { createImportErrorsTable } from '../data/createImportErrorsTable.js';
+import { ensureQuizAttemptExtras } from '../data/updateQuizAttemptTable.js';
 
 const migrations = [
   {
@@ -27,6 +28,7 @@ const migrations = [
   { id: '007_create_answer_options_table', run: createAnswerOptionsTable },
   { id: '008_create_question_topics_table', run: createQuestionTopicsTable },
   { id: '009_create_quiz_attempt_table', run: createQuizAttemptTable },
+  { id: '009b_update_quiz_attempt_table', run: ensureQuizAttemptExtras },
   { id: '010_create_attempt_answers_table', run: createAttemptAnswersTable },
   { id: '011_create_quizzes_table', run: createQuizzesTable },
   { id: '012_create_imports_table', run: createImportsTable },
